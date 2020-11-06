@@ -5,7 +5,7 @@
 #############################
 
 # make list of needed packages
-list_packages <- c("here","mgsub","tidyverse")
+list_packages <- c("here","mgsub","tidyverse","arsenal")
 
 
 #"summarytools","ggthemes","tidyselect","lubridate","ggplotify",
@@ -33,230 +33,106 @@ summary(fulldata$group_adm) # equal proportion of community and SAM
 
 
 
-fulldata %>% 
-  group_by(test_name) %>% 
-  summarise(
-    avg = mean(results, na.rm = T),
-    medn = median(results, na.rm = T),
-    minval = min(results, na.rm = T),
-    maxval = max(results, na.rm = T)
-  ) %>% 
-  arrange(desc(medn, avg))
+###### Making Participant characteristic table
+labels(fulldata)  <- c(site = 'Site', group_adm = "Group")
 
 
-# dot plots
-
-plot_lst <- c()
-
-# number of test available
-test_names <- unique(met_data_long$test_name)
-
-for (testname in test_names){
-  
-  plot_lst[[testname]] <- met_data_long %>% 
-    filter(test_name == testname) %>% 
-    ggplot(aes(categ_enrol, results)) +
-    geom_quasirandom(method = "tukeyDense", size=1.5, col ="darkblue", width= 0.15)+
-    stat_summary(fun = median, fun.min = median, fun.max = median,
-                 geom = "crossbar", width = 0.2, color="Red")+
-    stat_compare_means(label.x.npc = "centre", 
-                       method.args = list(alternative = "two.sided"))+
-    theme_pubclean()+
-    labs(title = paste("Dotplot of", testname, ":SAM vs Community", sep = " "), 
-         subtitle = "unpaired two-samples Wilcoxon test", x = "", y= "Test results")
-}
+mycontrols  <- tableby.control(test=TRUE, digits.p = 3,total=FALSE, digits.pct = 0, cat.simplify =F,
+                               numeric.test="anova", cat.test="fe",
+                               numeric.stats=c("meansd"), digits = 1
+                               #cat.stats=c("countpct"),
+                               #stats.labels=list(N='Count', median='Median', q1q3='Q1,Q3')
+)
 
 
-pdf(file = "results_dotplots.pdf", width = 10, height = 7, onefile = TRUE)
-plot_lst
-dev.off()
+tab1 <- tableby(group_adm ~ sex_adm + age_adm + oedema_adm + muac_adm + haz_adm + waz_adm + whz_adm , data=fulldata, control=mycontrols)
+summary(tab1, text=TRUE) 
 
-
-# + Notched boxplots
-# basic ggplot comparing means
-
-box_plots <- c()
-
-
-for (testname in test_names){
-  
-  box_plots[[testname]] <- met_data_long %>% 
-    filter(test_name == testname) %>% 
-    ggplot(aes(categ_enrol, results)) + geom_boxplot(width = 0.3, 
-                                                     notch = T, fill = "light grey")+
-    stat_compare_means(label.x.npc = "centre", 
-                       method.args = list(alternative = "two.sided"))+
-    theme_pubclean()+
-    labs(title = paste("Notched boxplots of", testname, ":SAM vs Community", sep = " "), 
-         subtitle = "unpaired two-samples Wilcoxon test", x = "", y= "Test results")
-}
-
-
-pdf(file = "results_boxplots.pdf", width = 10, height = 7, onefile = TRUE)
-box_plots
-dev.off()
+### write table
+write2html(tab1, file=paste0("Table1_Participant_Characteristic_",Sys.Date(),".html"))
 
 
 
-# Vitamins datasets -------------------------------------------------------
-
-# load vitamins raw datasets
-water_soluble <- read_csv("water_soluble_vitamins.csv") %>% 
-  select(record_id = Sample, everything())
-
-fat_soluble <- read_csv("fat_solube_vitamins.csv") %>% 
-  select(record_id = `Sample Name`, everything())
-
-clin_chem <- read_csv("C:/Users/cmaronga/Kemri Wellcome Trust/Narshion Ngao - CHAIN Data Curation/CHAIN_Data/CHAIN_Data_v9/laboratory/Biochemistry/clean_adm_clinical_chem_data.csv",
-                      na = ".")
-# change to long format
-# correct for wrong ID structure too
-
-water_soluble <- water_soluble %>% 
-  mutate(
-    first_five = str_sub(record_id, 1, 5),
-    last_three = str_sub(record_id, 6, 8),
-    first_five = replace(first_five, which(first_five == 30002), 30001),
-    record_id = paste(first_five, last_three, sep = "")
-  ) %>% select(-c(first_five, last_three)) %>% mutate(across(record_id, as.numeric)) %>% 
-  left_join(clin_chem %>% 
-              select(record_id_adm, albumin_adm), by = c("record_id" = "record_id_adm")) %>% 
-  mutate(
-    B2_corrected = round(B2/albumin_adm, 4),
-    B6_corrected = round(B6/albumin_adm, 4)
-  )
-
-water_soluble_long <- water_soluble %>% 
-  pivot_longer(cols = -record_id, 
-               names_to = "vitamin", 
-               values_to = "test_results") %>% 
-  mutate(across(.cols = vitamin, ~paste("vitamin", .))) %>%  # add prefix vitamin
-  filter(vitamin != "vitamin albumin_adm")
 
 
 
-# change fat soluble to long format
-fat_soluble <- fat_soluble %>% 
-  mutate(
-    first_five = str_sub(record_id, 1, 5),
-    last_three = str_sub(record_id, 6, 8),
-    first_five = replace(first_five, which(first_five == 30002), 30001),
-    record_id = paste(first_five, last_three, sep = "")
-  ) %>% select(-c(first_five, last_three))
+
+#######################################################
+###### Making metabolite tables
 
 
-fat_soluble_long <- fat_soluble %>% 
-  pivot_longer(cols = -record_id, 
-               names_to = "vitamin", 
-               values_to = "test_results") %>% 
-  mutate(
-    record_id = str_sub(record_id, 1, 8)
-  ) %>% mutate(across(record_id, as.numeric))
+####pull the data you want to include in table
+colnames(fulldata)
+list_met <- colnames(fulldata)[-c(1:16)]
 
-
-# combine all vitamins data
-vitamins_data <- bind_rows(water_soluble_long, 
-                           fat_soluble_long)
+#####split dataset by diagnositic, creating 3 datasets for each
+summary(fulldata$group_adm)
+SM<-subset(fulldata,fulldata$group_adm =="SM")
+CP<-subset(fulldata,fulldata$group_adm =="CP")
 
 
 
-# add site and ABC group
-vitamins_data <- vitamins_data %>% 
-  left_join(chain_data %>% mutate_at(vars(record_id), as.numeric) %>% 
-              select(record_id, site, categ_enrol), by = "record_id") 
+table.data<-SM[list_met]
+str(table.data)
 
-# Export dataset
+cal.iqr<-function(x){quantile(table.data[,x], na.rm=TRUE)}
+iqr.list<-sapply(1:ncol(table.data),cal.iqr)
+iqr.list
+iqr.list<-signif(iqr.list,3)
+iqr.list
 
-write.csv(vitamins_data, "vitamins_data.csv", row.names = F)
+iqr.list<-t(iqr.list)
+iqr.list
 
-# make dot plots
-plot_lst <- c()
-
-# number of test available
-vitamins <- unique(vitamins_data$vitamin)
-
-for (vitamin_name in vitamins){
-  
-  plot_lst[[vitamin_name]] <- vitamins_data %>% 
-    filter(vitamin == vitamin_name) %>% 
-    ggplot(aes(categ_enrol, test_results)) +
-    geom_quasirandom(method = "tukeyDense", size=1.5, col ="darkblue", width= 0.15)+
-    stat_summary(fun = median, fun.min = median, fun.max = median,
-                 geom = "crossbar", width = 0.2, color="Red")+
-    stat_compare_means(label.x.npc = "centre", 
-                       method.args = list(alternative = "two.sided"))+
-    theme_pubclean()+
-    labs(title = paste("Dotplot of", vitamin_name, ":SAM vs Community", sep = " "), 
-         subtitle = "unpaired two-samples Wilcoxon test", x = "", y= "Test results")
-}
+medians.iqrs<-paste0(iqr.list[,3]," [",iqr.list[,2],"-",iqr.list[,4],"]")
+medians.iqrs
 
 
-pdf(file = "vitamins_dotplots.pdf", width = 10, height = 7, onefile = TRUE)
-plot_lst
-dev.off()
+medians.iqrs.SM<-medians.iqrs
 
 
 
-# Make notched boxplots
-box_plots <- c()
+
+########################### calc table for CP
+table.data<-CP[list_met]
+str(table.data)
+
+cal.iqr<-function(x){quantile(table.data[,x], na.rm=TRUE)}
+iqr.list<-sapply(1:ncol(table.data),cal.iqr)
+iqr.list
+iqr.list<-signif(iqr.list,3)
+iqr.list
+
+iqr.list<-t(iqr.list)
+iqr.list
+
+medians.iqrs<-paste0(iqr.list[,3]," [",iqr.list[,2],"-",iqr.list[,4],"]")
+medians.iqrs
 
 
-for (vitamin_name in vitamins){
-  
-  box_plots[[vitamin_name]] <- vitamins_data %>% 
-    filter(vitamin == vitamin_name) %>% 
-    ggplot(aes(categ_enrol, test_results)) + geom_boxplot(width = 0.3, 
-                                                          notch = T, fill = "light grey")+
-    stat_compare_means(label.x.npc = "centre", 
-                       method.args = list(alternative = "two.sided"))+
-    theme_pubclean()+
-    labs(title = paste("Notched boxplots of", vitamin_name, ":SAM vs Community", sep = " "), 
-         subtitle = "unpaired two-samples Wilcoxon test", x = "", y= "Test results")
-}
+medians.iqrs.CP<-medians.iqrs
 
 
-pdf(file = "vitamins_boxplots.pdf", width = 10, height = 7, onefile = TRUE)
-box_plots
-dev.off()
-
-
-# Summary table for vitamins data -----------------------------------------
-
-SAM <- vitamins_data %>%
-  filter(categ_enrol == "Acute A") %>% 
-  group_by(vitamin) %>% 
-  summarise(
-    Mean = round(mean(test_results, na.rm = T),4),
-    SD = round(sd(test_results, na.rm = T),4),
-    Median = round(median(test_results, na.rm = T),4),
-    Q1 = round(quantile(test_results, probs = c(0.25), na.rm = T),4),
-    Q3 = round(quantile(test_results, probs = c(0.75), na.rm = T),4),
-    IQR = paste(Median, "(", Q3," - ",Q1,")", sep = "")
-  ) %>% 
-  select(-c(Q1, Q3))
+table<-cbind(medians.iqrs.SM,medians.iqrs.CP)
+rownames(table)<-colnames(table.data)
+head(table)
 
 
 
-CP <- vitamins_data %>% 
-  filter(categ_enrol == "Community") %>% 
-  group_by(vitamin) %>% 
-  summarise(
-    Mean = round(mean(test_results, na.rm = T),4),
-    SD = round(sd(test_results, na.rm = T),4),
-    Median = round(median(test_results, na.rm = T),4),
-    Q1 = round(quantile(test_results, probs = c(0.25), na.rm = T),4),
-    Q3 = round(quantile(test_results, probs = c(0.75), na.rm = T),4),
-    IQR = paste(Median, "(", Q3," - ",Q1,")", sep = "")
-  ) %>% 
-  select(-c(Q1, Q3))
+table<-data.frame(cbind(row.names(table),table))
+colnames(table) <-c("Micronutrient / Metabolite" , "SM", "CP")
 
 
-summary_table <- SAM %>% 
-  left_join(CP, by = "vitamin", suffix = c("_SAM","_CP")) 
+
+dput(table[,1])
+
+table %>% gt()
 
 
-write.csv(summary_table, 
-          "vitamins_summary_table.csv", row.names = F)
+
+write.csv(table, file=paste0("Table2_Median_IQR_Metabolites_",Sys.Date(),".csv"))
+
+
 
 
 
