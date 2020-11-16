@@ -27,7 +27,7 @@ theme_set(theme_minimal())
 
 
 # load full data
-idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-08.csv"), row.names = 1) 
+idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-10.csv"), row.names = 1) 
 
 
 
@@ -54,7 +54,7 @@ color.set<-c(c('grey80', 'springgreen2','grey60', 'grey40'))
 barplot(1:4, col = color.set)
 
 
-treshold_data<-read.csv("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\BoxCoxTransform_coefficients_all_M1M2&M3_3digits_2020-11-08.csv")
+treshold_data<-read.csv("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\Coefficients_all_M1M2&M3_binomial_3digits_2020-11-13.csv")
 colnames(treshold_data)
 treshold_data<-treshold_data[,c("X","FDR_p.group_admSM_M3")]
 colnames(treshold_data) <- c("metabolites", "pvalue")
@@ -74,7 +74,7 @@ colnames(idata)
 
 plot_list <- c()
 
-for (i in 1:163){
+for (i in 1:length(list_met)){
   y<-i+16
   
   stat.test<-data.frame("group1"="CP", "group2"="SM","p.adj"=treshold_data$pvalue_sig[i],
@@ -104,11 +104,11 @@ for (i in 1:163){
     # plot(plot_list[[i]])
     # dev.off()
     
-    pdf(sprintf("p_log_%s.pdf", y),width = 4, height = 4)
+    pdf(sprintf("p_log_%s.pdf", y),width = 3, height = 4)
     plot(plot_list[[i]])
     dev.off()
     
-    svg(sprintf("p_log_%s.svg", y),width = 4, height = 4)
+    svg(sprintf("p_log_%s.svg", y),width = 3, height = 4)
     plot(plot_list[[i]])
     dev.off()
     
@@ -118,25 +118,22 @@ for (i in 1:163){
 
 
 ## subset to final plot list
-
-colnames(data)[ colnames(data) %in% list.plots]
-
-idata<-data[, colnames(data) %in% list.vars |  colnames(data) %in% list.plots]
-head(idata)
-colnames(idata)
-
-
-
-
-
-#?cowplot
-plot_grid(p12_LYSOPC16.0,p13_LYSOPC20.3,p15_SMOH22.1,p14_SMOH22.2,p16_SMOH24.1,
-          p17_PC36.0AE,p18_PC36.6AA,p19_PC36.0AA,p20_C3.1,p21_C5.1DC,
-          p9_Leucine, p10_Aspartic.acid,p11_BCAA,p1_BCAA_AAA, p2_kyn_trp,p3_urea, p4_choline, p5_betaine, p6_glutamic.ac,
-          p7_C2_C0, p8_bHydroxybutyric.ac,
-          ncol=5)
-
-
+# colnames(data)[ colnames(data) %in% list.plots]
+# 
+# idata<-data[, colnames(data) %in% list.vars |  colnames(data) %in% list.plots]
+# head(idata)
+# colnames(idata)
+# 
+# 
+# 
+# #?cowplot
+# plot_grid(p12_LYSOPC16.0,p13_LYSOPC20.3,p15_SMOH22.1,p14_SMOH22.2,p16_SMOH24.1,
+#           p17_PC36.0AE,p18_PC36.6AA,p19_PC36.0AA,p20_C3.1,p21_C5.1DC,
+#           p9_Leucine, p10_Aspartic.acid,p11_BCAA,p1_BCAA_AAA, p2_kyn_trp,p3_urea, p4_choline, p5_betaine, p6_glutamic.ac,
+#           p7_C2_C0, p8_bHydroxybutyric.ac,
+#           ncol=5)
+# 
+# 
 
 
 

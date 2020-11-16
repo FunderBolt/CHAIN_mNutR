@@ -78,7 +78,7 @@ format(FC_data, scientific=FALSE)
 
 ##add column for log2 base 
 FC_data$log2FC<-log2(FC_data$median_case) - log2(FC_data$median_control)
-hist(FC_data_compiled$FC_median)
+hist(FC_data$FC_median)
 
 ## add in metabolites column for merge
 FC_data$metabolites<-row.names(FC_data)
@@ -92,7 +92,7 @@ str(FC_data)
 # add threshold 
 ### pulling the p-values from the glm results
 #choose.files()
-treshold_data<-read.csv("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\BoxCoxTransform_coefficients_all_M1M2&M3_3digits_2020-11-08.csv")
+treshold_data<-read.csv("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\Coefficients_all_M1M2&M3_binomial_3digits_2020-11-13.csv")
 colnames(treshold_data)
 treshold_data<-treshold_data[,c("X","FDR_p.group_admSM_M3")]
 colnames(treshold_data) <- c("metabolites", "pvalue")
@@ -107,18 +107,88 @@ plot_data<-left_join(FC_data, treshold_data, by="metabolites" )
 ########################
 write.csv(plot_data, file=paste0("D:/Dropbox/Bandsma.Lab/1.Projects/1.CHAIN_NETWORK/2019_CHAIN_Micronutrient/7-Analysis-Results/GLMs/List_Metabolites_FC&FDR_sig_", Sys.Date(), ".csv"))
 
+dput(plot_data$metabolites)
+vitamins <-c("Retinol", "OH25_VitD3", "aTocopherol", "bg_Tocopherol", 
+                    "B1", "B2", "B3_amide", "B5", "B6", "B7", "C","B2_corr", "B6_corr")
+
+just_metabolites<-c("Creatinine", 
+            "Glycine", "Alanine", "Serine", "Proline", "Valine", "Threonine", 
+            "Taurine", "Putrescine", "trans.Hydroxyproline", "Leucine", "Isoleucine", 
+            "Asparagine", "Aspartic_ac", "Glutamine", "Glutamic_ac", "Methionine", 
+            "Histidine", "a_Aminoadipic_ac", "Phenylalanine", "Methionine.sulfoxide", 
+            "Arginine", "Acetyl.ornithine", "Citrulline", "Serotonin", "Tyrosine", 
+            "Asymmetric_dimethylarginine", "total_dimethylarginine", "Tryptophan", 
+            "Kynurenine", "Carnosine", "Ornithine", "Lysine", "Spermidine", 
+            "Spermine", "Sarcosine", "Creatine", "Betaine", "Choline", "Trimethylamine_N.oxide", 
+            "Methylhistidine", "Homocysteine", "Hypoxanthine", "Ethanolamine", 
+            "Cystathionine", "N.acetylpetrescine", "Homocitrulline", "Urea", 
+            "Hydroxy.lysine", "a_aminobutyric_ac", "g_aminobutyric_ac", "Lactic_ac", 
+            "b_Hydroxybutyric_ac", "a_Ketoglutaric_ac", "Citric_ac", "Butyric_ac", 
+            "Propionic_ac", "HPHPA", "p.Hydroxyhippuric_ac", "Succinic_ac", 
+            "Fumaric_ac", "Pyruvic_ac", "Isobutyric_ac", "Hippuric_ac", "Methylmalonic_ac", 
+            "Homovanillic_ac", "Indole_acetic_ac", "Uric_ac", "OH5_Indoleacetic_ac", 
+            "p.Hydroxyphenylacetic_ac", "Valeric_ac", "Uridine", "Xanthine", 
+            "Guanidineacetic_ac", "Acetyl.lysine", "Glucose", "AAA", 
+            "BCAA", "BCAA_AAA", "Fischer_ratio", "Essential_AA", "Glucogenic_AA", 
+            "Keto_AA", "Kynurenine_Trp", "Orn_Arg", "Putrescine_Orn", "Serotonin_Trp", 
+            "Spermidine_Putrescine", "Spermine_Spermidine", "Tyr_Phe", "Total_DMA_Arg", 
+            "Cit_Arg", "Total_AAs", "urea_cycle")
+            
+            
+just_lipids<-c("LYSOC14.0", 
+            "LYSOC16.1", "LYSOC16.0", "LYSOC17.0", "LYSOC18.2", "LYSOC18.1", 
+            "LYSOC18.0", "LYSOC20.4", "LYSOC20.3", "LYSOC24.0", "LYSOC26.1", 
+            "LYSOC26.0", "LYSOC28.1", "LYSOC28.0", "Sphg_14.1SMOH", "Sphg_16.1SM", 
+            "Sphg_16.0SM", "Sphg_16.1SMOH", "Sphg_18.1SM", "PC32.2_AA", "Sphg_18.0SM", 
+            "Sphg_20.2SM", "PC36.0_AE", "PC36.6_AA", "PC36.0_AA", "Sphg_22.2SMOH", 
+            "Sphg_22.1SMOH", "PC38.6_AA", "PC38.0_AA", "PC40.6_AE", "Sphg_24.1SMOH", 
+            "PC40.6_AA", "PC40.2_AA", "PC40.1_AA","PC40.2") 
+            
+            
+just_carnitines<-c( "C0", "C2", "C3.1", "C3", 
+            "C4.1", "C4", "C3OH", "C5.1", "C5", "C4OH", "C6.1", "C6", "C5OH", 
+            "C5.1DC", "C5DC", "C8", "C5MDC", "C9", "C7DC", "C10.2", "C10.1", 
+            "C10", "C12.1", "C12", "C14.2", "C14.1", "C14", "C12DC", "C14.2OH", 
+            "C14.1OH", "C16.2", "C16.1", "C16", "C16.2OH", "C16.1OH", "C16OH", 
+            "C18.2", "C18.1", "C18", "C18.1OH","C2_C0")
+
 
 ### select label to plot
+all_results<-plot_data
+plot_data<-all_results
+
+plot_data<-plot_data[plot_data$metabolites %in% vitamins, ]
+plot_data<-plot_data[plot_data$metabolites %in% just_metabolites, ]
+plot_data<-plot_data[plot_data$metabolites %in% just_lipids, ]
+plot_data<-plot_data[plot_data$metabolites %in% just_carnitines, ]
+
+
 dput(plot_data$metabolites[plot_data$pvalue<0.05 & (plot_data$log2FC > 0.5849625 | plot_data$log2FC < -0.5849625)])
 
 to_label<-c("B1", "Alanine", "Threonine", "trans.Hydroxyproline", "Glutamine", 
+  "Arginine", "Citrulline", "Tyrosine", "Tryptophan", "Ornithine", 
+  "Ethanolamine", "Hydroxy.lysine", "b_Hydroxybutyric_ac", "Butyric_ac", 
+  "Isobutyric_ac", "Homovanillic_ac", "Valeric_ac", "LYSOC14.0", 
+  "LYSOC16.1", "LYSOC16.0", "LYSOC17.0", "LYSOC18.2", "LYSOC18.0", 
+  "LYSOC20.3", "PC36.6_AA", "PC38.6_AA", "PC40.6_AE", "PC40.6_AA", 
+  "C0", "C2", "C4OH", "C9", "C10.2", "C16.1", "B2_corr", "Kynurenine_Trp", 
+  "Putrescine_Orn", "Serotonin_Trp", "Tyr_Phe", "Total_DMA_Arg", 
+  "C2_C0", "urea_cycle")
+
+to_label<-c("B1", "B2_corr")
+
+to_label<-c("Alanine", "Threonine", "trans.Hydroxyproline", "Glutamine", 
             "Arginine", "Citrulline", "Tyrosine", "Tryptophan", "Ornithine", 
             "Ethanolamine", "Hydroxy.lysine", "b_Hydroxybutyric_ac", "Butyric_ac", 
-            "Isobutyric_ac", "Homovanillic_ac", "Valeric_ac", "LYSOC14.0", 
-            "LYSOC16.1", "LYSOC16.0", "LYSOC17.0", "LYSOC18.2", "LYSOC18.0", 
-            "LYSOC20.3", "PC36.6_AA", "PC38.6_AA", "PC40.6_AE", "PC40.6_AA", 
-            "C0", "C2", "C4OH", "C9", "C10.2", "C16.1")
+            "Isobutyric_ac", "Homovanillic_ac", "Valeric_ac", "Kynurenine_Trp", 
+            "Putrescine_Orn", "Serotonin_Trp", "Tyr_Phe", "Total_DMA_Arg", 
+             "urea_cycle")
 
+to_label<-c("LYSOC14.0", "LYSOC16.1", "LYSOC16.0", "LYSOC17.0", "LYSOC18.2", 
+            "LYSOC18.0", "LYSOC20.3", "PC36.6_AA", "PC38.6_AA", "PC40.6_AE", 
+            "PC40.6_AA")
+
+to_label<-c("C0", "C2", "C4OH", "C9", "C10.2", "C16.1","C2_C0")
 
 logratio2foldchange(0.5, base=2)
 foldchange2logratio(1.5, base=2)
@@ -129,7 +199,7 @@ volcano_plot<-EnhancedVolcano(plot_data,
                 x = 'log2FC',
                 y = 'pvalue',
                 xlim = c(-3, 3),
-                ylim = c(0, 12.5),
+                ylim = c(0, 6),
                 title = 'SM versus Community',
                 subtitle = '',
                 subtitleLabSize = 12,
@@ -156,10 +226,28 @@ volcano_plot<-EnhancedVolcano(plot_data,
               selectLab = to_label)
                 
               
+volcano_plot
 
-svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\results_Volcano_plot.svg", width = 9, height = 8, bg = "white")
+svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\results_Volcano_plot_ALL_2020-11-13.svg", width = 9, height = 8, bg = "white")
 volcano_plot
 dev.off()
+
+svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\results_Volcano_plot_vitamines_2020-11-13.svg", width = 9, height = 8, bg = "white")
+volcano_plot
+dev.off()
+
+svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\results_Volcano_plot_Metabs_2020-11-13.svg", width = 9, height = 8, bg = "white")
+volcano_plot
+dev.off()
+
+svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\results_Volcano_plot_Lipids_2020-11-13.svg", width = 9, height = 8, bg = "white")
+volcano_plot
+dev.off()
+
+svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\results_Volcano_plot_Carnitines_2020-11-13.svg", width = 9, height = 8, bg = "white")
+volcano_plot
+dev.off()
+
 
 
 # ## Volcano plot with ggplot

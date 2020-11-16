@@ -22,7 +22,7 @@ lapply(list_packages, require, character.only = TRUE)
 
 
 # load full data
-idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-08.csv"), row.names = 1) 
+idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-10.csv"), row.names = 1) 
 
 
 
@@ -151,9 +151,9 @@ write.csv(table, file=paste0("Table2_Median_IQR_Metabolites_",Sys.Date(),".csv")
 #### adding GLMs
 
 # load full data
-idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_BoxCox_2020-11-08.csv"), row.names = 1) 
-idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-08.csv"), row.names = 1) 
-
+#idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_BoxCox_2020-11-08.csv"), row.names = 1) 
+idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-10.csv"), row.names = 1) 
+colnames(idata)
 
 
 ### list factors to convert
@@ -176,7 +176,8 @@ labels(idata)  <- c(site = 'Site', group_adm = "Group")
 # idata$Group <- relevel(idata$group_adm, ref = "CP")
 
 
-idata[,17:ncol(idata)]<-idata[,17:ncol(idata)]+1
+
+#idata[,17:ncol(idata)]<-idata[,17:ncol(idata)]+1
 #################################################
 ###GLMs for all metabolites --- create a function
 
@@ -188,9 +189,10 @@ GLM.run<-function(y) {
 }
 
 GLM.run<-function(y) {
-  form <- as.formula(paste0(y,"~ group_adm"))
-  fit<-(glm(form, data=idata, family=Gamma, na.action = na.exclude))
+  form <- as.formula(paste0("group_adm~", y))
+  fit<-(glm(form, data=idata, family=binomial, na.action = na.exclude))
 }
+
 
 
 
@@ -201,8 +203,8 @@ GLM.run<-function(y) {
 }
 
 GLM.run<-function(y) {
-  form <- as.formula(paste0(y,"~ group_adm + sex_adm + age_adm"))
-  fit<-(glm(form, data=idata, family=Gamma, na.action = na.exclude))
+  form <- as.formula(paste0("group_adm~", y," + sex_adm + age_adm"))
+  fit<-(glm(form, data=idata, family=binomial, na.action = na.exclude))
 }
 
 
@@ -215,9 +217,18 @@ GLM.run<-function(y) {
 }
 
 GLM.run<-function(y) {
-  form <- as.formula(paste0(y,"~ group_adm + sex_adm + age_adm + site"))
-  fit<-(glm(form, data=idata, family=Gamma, na.action = na.exclude))
+  form <- as.formula(paste0("group_adm~",y,"+ sex_adm + age_adm + site"))
+  fit<-(glm(form, data=idata, family=binomial, na.action = na.exclude))
 }
+
+
+#### M4
+GLM.run<-function(y) {
+  form <- as.formula(paste0("group_adm~",y,"+ site"))
+  fit<-(glm(form, data=idata, family=binomial, na.action = na.exclude))
+}
+
+
 
 
 ### apply the function to all metabolites
@@ -226,6 +237,7 @@ GLMs.out <- lapply(colnames(idata)[c(17:ncol(idata))],GLM.run )
 #### print out results
 results<-lapply(GLMs.out, function(x){summary(x)})
 results
+
 
 
 #Pull coefficients from models
@@ -270,6 +282,11 @@ p.vals<-c(ALL_estim.coef.results$p.group_admSM.1)
 p.vals<-c(ALL_estim.coef.results$p.group_admSM.2)
 
 
+colnames(ALL_estim.coef.results)
+p.vals<-ALL_estim.coef.results[, 8]
+p.vals<-ALL_estim.coef.results[, 29]
+p.vals<-ALL_estim.coef.results[, 53]
+
 # apply correction -- > some correction option methods: "bonferroni", "fdr"
 final<-p.adjust(p.vals, method="fdr")
 final<-signif(final, digits=3)
@@ -295,8 +312,10 @@ ALL_estim.coef.results<-apply(ALL_estim.coef.results,2, signif, digits=3)
 head(ALL_estim.coef.results)
 
 write.csv(ALL_estim.coef.results,file=paste0("BoxCoxTransform_coefficients_all_M1M2&M3_Gamma_3digits_",Sys.Date(), ".csv"))
+write.csv(ALL_estim.coef.results,file=paste0("Coefficients_all_M1M2&M3_binomial_3digits_",Sys.Date(), ".csv"))
 
-
+write.csv(ALL_estim.coef.results,file=paste0("Coefficients_all_M4_binomial_3digits_",Sys.Date(), ".csv"))
+write.csv(ALL_estim.coef.results,file=paste0("Coefficients_all_M3_binomial_3digits_",Sys.Date(), ".csv"))
 
 #################################################
 #################################################
@@ -344,4 +363,17 @@ qqplots.run <-function(y) {
 
 
 
+ ############################# Kruskall wallis test
+ 
+ # ####
+ # GLM.run<-function(y) {
+ #   form <- as.formula(paste0(y,"~ group_adm"))
+ #   fit<-(kruskal.test(form, data=idata, na.action = na.exclude))
+ # }
+ # 
+ # 
+ # 
+ # for(i in 1:length(GLMs.out))
+ #   results[1]<-GLMs.out[[1]]$p.value
+ # 
 
