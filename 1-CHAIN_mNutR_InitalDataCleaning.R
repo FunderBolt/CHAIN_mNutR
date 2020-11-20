@@ -71,7 +71,8 @@ met$record_id
 
 
 
-######################## Metabolites TMIC PRIME DI_LC-MS_MS
+
+######################## water vits
 #choose.files()
 Water_vits<-read_excel(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/TMIC016R water-soluble vitamin data.xlsx"),skip=11)
 
@@ -91,6 +92,25 @@ head(Water_vits)
 
 
 
+######################## Metals
+#choose.files()
+metals<-read_excel(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/TMIC016R metal data.xlsx"),skip=13, na="ND")
+
+### clean up names
+#dput(colnames(metals))
+colnames(metals)[1]<-c("record_id")
+
+
+### Remove "Plasma_  record_id names
+metals$record_id <- mgsub(metals$record_id, c("Plasma_ "), c(""))
+
+## check if duplicates 
+metals$record_id[duplicated(metals$record_id)]
+### check general format
+head(metals)
+
+
+
 ####################### Merge files
 data<-merge(fatsol_vits, Water_vits, by="record_id", all=TRUE)
 data<-merge(data, met, by="record_id", all=TRUE)
@@ -98,7 +118,6 @@ data<-merge(data, met, by="record_id", all=TRUE)
 
 
 ####################### Correct ids
-
 ### List of ids that need to be corrected
 list_ids<-c(30002751, 30002802,30002818,30002821,30002837,30002842)
 list_ids_new<-gsub("30002", "30001", list_ids)
@@ -107,5 +126,7 @@ list_ids_new<-gsub("30002", "30001", list_ids)
 data$record_id[data$record_id %in% list_ids] <- list_ids_new
 data$record_id
 
+
+data<-merge(data, metals, by="record_id", all=TRUE)
 
 write.csv(data, file=paste0("CHAIN_mNutR_metabolite_data_",Sys.Date(),".csv"))
