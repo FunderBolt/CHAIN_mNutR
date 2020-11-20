@@ -17,7 +17,7 @@ lapply(list_packages, require, character.only = TRUE)
 
 
 # load met data
-met_data <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_metabolite_data_2020-11-10.csv"), row.names = 1) 
+met_data <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_metabolite_data_2020-11-20.csv"), row.names = 1) 
 
 # load clinical data
 #choose.files()
