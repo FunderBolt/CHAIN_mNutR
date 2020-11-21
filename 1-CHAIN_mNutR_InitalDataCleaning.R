@@ -94,7 +94,7 @@ head(Water_vits)
 
 ######################## Metals
 #choose.files()
-metals<-read_excel(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/TMIC016R metal data.xlsx"),skip=13, na="ND")
+metals<-read_excel(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/TMIC016R metal data.xlsx"),skip=13)
 
 ### clean up names
 #dput(colnames(metals))

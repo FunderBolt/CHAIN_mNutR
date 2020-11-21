@@ -17,8 +17,8 @@ lapply(list_packages, require, character.only = TRUE)
 
 
 # load full data
-idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_2020-11-10.csv"), row.names = 1) # ND (not done) equivalent to NA
-
+idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_2020-11-20.csv"), row.names = 1) # ND (not done) equivalent to NA
+colnames(idata)
 
 
 ### list factors to convert
@@ -41,13 +41,15 @@ colnames(idata)[17:ncol(idata)]
 rawdata<-idata[ , c(7, 17:ncol(idata))]
 
 
-### create log dataset
+### create log dataset and add in group annotation
 logdata<-log(rawdata[,-1] + 1)
 logdata<-cbind(idata$group_adm, logdata)
 
+
+
 colnames(data)
 ## PCA on all metabolite 
-PCA(rawdata, scale.unit = TRUE)
+PCA(rawdata, scale.unit = TRUE, quali.sup=1)
 out_PCA<-PCA(logdata, scale.unit = TRUE, quali.sup=1)
 
 plot(out_PCA, axes = c(1, 2), choix = c("ind"), ellipse = NULL, habillage=1,
@@ -132,6 +134,9 @@ PCA(logdata[,c("LYSOC14.0",
                "PC40.6_AA", "PC40.2_AA", "PC40.1_AA")], scale.unit = TRUE)
 
 
+
+
+
 dput(colnames(idata)[17:ncol(idata)])
 ### PCA only carnitines
 PCA(rawdata[,c("C0", "C2", "C3.1", "C3", 
@@ -152,8 +157,28 @@ PCA(logdata[,c("C0", "C2", "C3.1", "C3",
 
 
 
-#### NO outlier to remove
+###################################
+dput(colnames(idata)[17:ncol(idata)])
+### PCA only metals
+PCA(rawdata[,c("Barium", "Sodium", "Magnesium", 
+               "Phosphorous", "Calcium", "Titanium", "Vanadium", "Manganese", 
+               "Iron", "Cobalt", "Copper", "Zinc", "Gallium", "Arsenic", "Selenium", 
+               "Rubidium", "Strontium", "Antimony", "Tellurium")], scale.unit = TRUE)
+
+
+PCA(logdata[,c("Barium", "Sodium", "Magnesium", 
+               "Phosphorous", "Calcium", "Titanium", "Vanadium", "Manganese", 
+               "Iron", "Cobalt", "Copper", "Zinc", "Gallium", "Arsenic", "Selenium", 
+               "Rubidium", "Strontium", "Antimony", "Tellurium")], scale.unit = TRUE)
+
+
+
+
+#### NO outlier to remove --> sample 52, strong outlier to remove
 #### almost removed 78 (--- > but before logtransform) to consider
+
+
+
 
 
 colnames(idata)
@@ -183,7 +208,7 @@ for(i in 1:ncol(logdata)){
 ###################### Boxplots for all metabolites
 
 ###create the boxplots using a loop
-for(i in 1:ncol(rawdata)){
+for(i in 17:ncol(rawdata)){
   file.name<-paste0("D:/Dropbox/Bandsma.Lab/1.Projects/1.CHAIN_NETWORK/2019_CHAIN_Micronutrient/7-Analysis-Results/Boxplots/",colnames(rawdata)[i],"_Boxplots_raw.jpeg")
   jpeg(filename=file.name)
   boxplot(rawdata[,i]~idata$group_adm, xlab = colnames(rawdata)[i], main = paste0("Boxplots",colnames(rawdata)[i]))
@@ -193,12 +218,17 @@ for(i in 1:ncol(rawdata)){
 
 
 ###create the boxplots using a loop
-for(i in 1:ncol(logdata)){
+for(i in 17:ncol(logdata)){
   file.name<-paste0("D:/Dropbox/Bandsma.Lab/1.Projects/1.CHAIN_NETWORK/2019_CHAIN_Micronutrient/7-Analysis-Results/Boxplots/",colnames(logdata)[i],"_Boxplots_log.jpeg")
   jpeg(filename=file.name)
   boxplot(logdata[,i]~idata$group_adm, xlab = colnames(logdata)[i], main = paste0("Boxplots",colnames(logdata)[i]))
   dev.off()
 }
+
+
+
+
+
 
 
 
@@ -247,36 +277,40 @@ outlier_all_SD
 write.csv(outlier_all_SD, file=paste0("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\QC_cleaning\\CHAIN_mNutR_outliers_Hampel_all_15SD_",Sys.Date(),".csv"))
 
 
+
+
 ###################################
 ### [Note] Grubbs test depends of having some form of normal distibution, so using BoxCox transformed data
-test <- grubbs.test(idata$albumin_adm)
-test
-
-
-### apply the function to all metabolites
-outlier_out <- apply(idata_trans[c(17:ncol(idata_trans))], 2,grubbs.test )
-outlier_out
-
-outlier_compile<-c()
-for (i in 1:183) {
-  outlier_compile<-rbind(outlier_compile,
-                         c( names(outlier_out[i]), outlier_out[[i]]$p.value, outlier_out[[i]]$alternative))
-}
-
-outlier_compile
-
-
-write.csv(outlier_compile, file=paste0("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\QC_cleaning\\CHAIN_mNutR_outliers_GrubsTest_all_",Sys.Date(),".csv"))
+# test <- grubbs.test(idata$albumin_adm)
+# test
+# 
+# 
+# ### apply the function to all metabolites
+# outlier_out <- apply(idata_trans[c(17:ncol(idata_trans))], 2,grubbs.test )
+# outlier_out
+# 
+# outlier_compile<-c()
+# for (i in 1:183) {
+#   outlier_compile<-rbind(outlier_compile,
+#                          c( names(outlier_out[i]), outlier_out[[i]]$p.value, outlier_out[[i]]$alternative))
+# }
+# 
+# outlier_compile
+# 
+# 
+# write.csv(outlier_compile, file=paste0("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\QC_cleaning\\CHAIN_mNutR_outliers_GrubsTest_all_",Sys.Date(),".csv"))
 
 
 
 
 ########################################
-
 #######outliers  Removed
 
-### a-aminoadipic acid, n=1
+colnames(idata)
+### a-aminoadipic acid, n=2
+max(idata$a_Aminoadipic_ac, na.rm=T)
 idata$a_Aminoadipic_ac [idata$a_Aminoadipic_ac == max(idata$a_Aminoadipic_ac, na.rm=T)]<-NA
+max(idata$a_Aminoadipic_ac, na.rm=T)
 idata$a_Aminoadipic_ac [idata$a_Aminoadipic_ac == max(idata$a_Aminoadipic_ac, na.rm=T)]<-NA
 max(idata$a_Aminoadipic_ac, na.rm=T)
 idata$a_Aminoadipic_ac
@@ -329,10 +363,12 @@ idata$LYSOC28.1
 idata$p.Hydroxyphenylacetic_ac [idata$p.Hydroxyphenylacetic_ac == max(idata$p.Hydroxyphenylacetic_ac, na.rm=T)]<-NA
 idata$p.Hydroxyphenylacetic_ac
 
-### PC40.2, n=1
-idata$PC40.2 [idata$PC40.2 == max(idata$PC40.2, na.rm=T)]<-NA
-#idata$PC40.2 [idata$PC40.2 == max(idata$PC40.2, na.rm=T)]<-NA
-idata$PC40.2
+
+
+### PC40.2_AA, n=1
+idata$PC40.2_AA [idata$PC40.2_AA == max(idata$PC40.2_AA, na.rm=T)]<-NA
+idata$PC40.2_AA
+
 
 ### PC40.1, n=1
 #idata$PC40.1 [idata$PC40.1 == max(idata$PC40.1, na.rm=T)]<-NA
@@ -350,8 +386,72 @@ idata$Valeric_ac [idata$Valeric_ac == max(idata$Valeric_ac, na.rm=T)]<-NA
 idata$Valeric_ac
 
 
+### metals checked
+colnames(idata) 
+### removing outlier row 52, based on PCA
+idata[52:54,178:200]
+idata[52,178:200]<-NA
+idata[52:54,178:200]
+
+
+
+PCA(idata[,c("albumin_adm","Retinol", "OH25_VitD3", "aTocopherol", "bg_Tocopherol", "B1", 
+               "B2","B2_corr", "B3_amide", "B5", "B6","B6_corr", "B7", "C")], scale.unit = TRUE)
+
+
+PCA(idata[,c("Creatinine", "Glycine", 
+               "Alanine", "Serine", "Proline", "Valine", "Threonine", "Taurine", 
+               "Putrescine", "trans.Hydroxyproline", "Leucine", "Isoleucine", 
+               "Asparagine", "Aspartic_ac", "Glutamine", "Glutamic_ac", "Methionine", 
+               "Histidine", "a_Aminoadipic_ac", "Phenylalanine", "Methionine.sulfoxide", 
+               "Arginine", "Acetyl.ornithine", "Citrulline", "Serotonin", "Tyrosine", 
+               "Asymmetric_dimethylarginine", "total_dimethylarginine", "Tryptophan", 
+               "Kynurenine", "Carnosine", "Ornithine", "Lysine", "Spermidine", 
+               "Spermine", "Sarcosine", "Creatine", "Betaine", "Choline", "Trimethylamine_N.oxide", 
+               "Methylhistidine", "Homocysteine", "Hypoxanthine", "Ethanolamine", 
+               "Cystathionine", "N.acetylpetrescine", "Homocitrulline", "Urea", 
+               "Hydroxy.lysine", "a_aminobutyric_ac", "g_aminobutyric_ac", "Lactic_ac", 
+               "b_Hydroxybutyric_ac", "a_Ketoglutaric_ac", "Citric_ac", "Butyric_ac", 
+               "Propionic_ac", "HPHPA", "p.Hydroxyhippuric_ac", "Succinic_ac", 
+               "Fumaric_ac", "Pyruvic_ac", "Isobutyric_ac", "Hippuric_ac", "Methylmalonic_ac", 
+               "Homovanillic_ac", "Indole_acetic_ac", "Uric_ac", "OH5_Indoleacetic_ac", 
+               "p.Hydroxyphenylacetic_ac", "Valeric_ac", "Uridine", "Xanthine", 
+               "Guanidineacetic_ac", "Acetyl.lysine", "Glucose")], scale.unit = TRUE)
+
+
+
+
+
+PCA(idata[,c("LYSOC14.0", 
+             "LYSOC16.1", "LYSOC16.0", "LYSOC17.0", "LYSOC18.2", "LYSOC18.1", 
+             "LYSOC18.0", "LYSOC20.4", "LYSOC20.3", "LYSOC24.0", "LYSOC26.1", 
+             "LYSOC26.0", "LYSOC28.1", "LYSOC28.0", "Sphg_14.1SMOH", "Sphg_16.1SM", 
+             "Sphg_16.0SM", "Sphg_16.1SMOH", "Sphg_18.1SM", "PC32.2_AA", "Sphg_18.0SM", 
+             "Sphg_20.2SM", "PC36.0_AE", "PC36.6_AA", "PC36.0_AA", "Sphg_22.2SMOH", 
+             "Sphg_22.1SMOH", "PC38.6_AA", "PC38.0_AA", "PC40.6_AE", "Sphg_24.1SMOH", 
+             "PC40.6_AA", "PC40.2_AA", "PC40.1_AA")], scale.unit = TRUE)
+
+
+
+PCA(idata[,c("C0", "C2", "C3.1", "C3", 
+               "C4.1", "C4", "C3OH", "C5.1", "C5", "C4OH", "C6.1", "C6", "C5OH", 
+               "C5.1DC", "C5DC", "C8", "C5MDC", "C9", "C7DC", "C10.2", "C10.1", 
+               "C10", "C12.1", "C12", "C14.2", "C14.1", "C14", "C12DC", "C14.2OH", 
+               "C14.1OH", "C16.2", "C16.1", "C16", "C16.2OH", "C16.1OH", "C16OH", 
+               "C18.2", "C18.1", "C18", "C18.1OH")], scale.unit = TRUE)
+
+
+
+
+PCA(idata[,c("Barium", "Sodium", "Magnesium", 
+               "Phosphorous", "Calcium", "Titanium", "Vanadium", "Manganese", 
+               "Iron", "Cobalt", "Copper", "Zinc", "Gallium", "Arsenic", "Selenium", 
+               "Rubidium", "Strontium", "Antimony", "Tellurium")], scale.unit = TRUE)
+
+
+colnames(idata)
 # final clean data
-write.csv(idata, file=paste0("CHAIN_mNutR_fulldata_X_",Sys.Date(),".csv"))
+write.csv(idata, file=paste0("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\5-Data\\CHAIN_mNutR_fulldata_X_",Sys.Date(),".csv"))
 
 
 
@@ -364,5 +464,5 @@ idata_trans<-cbind(idata[,c(1:16)],idata_trans)
 colnames(idata_trans)
 
 # final clean data
-write.csv(idata, file=paste0("CHAIN_mNutR_fulldata_X_BoxCox_",Sys.Date(),".csv"))
+write.csv(idata, file=paste0("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\5-Data\\CHAIN_mNutR_fulldata_X_BoxCox_",Sys.Date(),".csv"))
 

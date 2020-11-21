@@ -29,7 +29,7 @@ theme_set(theme_minimal())
 
 
 # load full data
-idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-08.csv"), row.names = 1) 
+idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-21.csv"), row.names = 1) 
 
 
 
@@ -92,24 +92,33 @@ str(FC_data)
 # add threshold 
 ### pulling the p-values from the glm results
 #choose.files()
-treshold_data<-read.csv("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\Coefficients_all_M1M2&M3_binomial_3digits_2020-11-13.csv")
+treshold_data<-read.csv("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\medianIQR_&_GLMs\\GLM_results_Coefficient_tables\\Coefficients_all_M1M2&M3M4_binomial_3digits_2020-11-21.csv")
 colnames(treshold_data)
-treshold_data<-treshold_data[,c("X","FDR_p.group_admSM_M3")]
-colnames(treshold_data) <- c("metabolites", "pvalue")
+treshold_data<-treshold_data[,c("metabolites","FDR_p.group_admSM_M3")]
 head(treshold_data)
 str(treshold_data)
-treshold_data$metabolites<-as.character(treshold_data$metabolites)
 
+
+head(FC_data)
 plot_data<-left_join(FC_data, treshold_data, by="metabolites" )
-
+colnames(plot_data)<-c("median_case", "median_control", "group_diff_median", "FC_median", 
+                       "log2FC", "metabolites", "pvalue")
 
 
 ########################
-write.csv(plot_data, file=paste0("D:/Dropbox/Bandsma.Lab/1.Projects/1.CHAIN_NETWORK/2019_CHAIN_Micronutrient/7-Analysis-Results/GLMs/List_Metabolites_FC&FDR_sig_", Sys.Date(), ".csv"))
+write.csv(plot_data, file=paste0("D:/Dropbox/Bandsma.Lab/1.Projects/1.CHAIN_NETWORK/2019_CHAIN_Micronutrient/7-Analysis-Results/medianIQR_&_GLMs/List_Metabolites_FC&FDR_sig_", Sys.Date(), ".csv"))
+
+
+
 
 dput(plot_data$metabolites)
 vitamins <-c("Retinol", "OH25_VitD3", "aTocopherol", "bg_Tocopherol", 
                     "B1", "B2", "B3_amide", "B5", "B6", "B7", "C","B2_corr", "B6_corr")
+
+metals<-c("Barium", "Sodium", "Magnesium", 
+            "Phosphorous", "Calcium", "Titanium", "Vanadium", "Manganese", 
+            "Iron", "Cobalt", "Copper", "Zinc", "Gallium", "Arsenic", "Selenium", 
+            "Rubidium", "Strontium", "Antimony", "Tellurium")
 
 just_metabolites<-c("Creatinine", 
             "Glycine", "Alanine", "Serine", "Proline", "Valine", "Threonine", 
@@ -158,6 +167,7 @@ all_results<-plot_data
 plot_data<-all_results
 
 plot_data<-plot_data[plot_data$metabolites %in% vitamins, ]
+plot_data<-plot_data[plot_data$metabolites %in% metals, ]
 plot_data<-plot_data[plot_data$metabolites %in% just_metabolites, ]
 plot_data<-plot_data[plot_data$metabolites %in% just_lipids, ]
 plot_data<-plot_data[plot_data$metabolites %in% just_carnitines, ]
@@ -166,16 +176,19 @@ plot_data<-plot_data[plot_data$metabolites %in% just_carnitines, ]
 dput(plot_data$metabolites[plot_data$pvalue<0.05 & (plot_data$log2FC > 0.5849625 | plot_data$log2FC < -0.5849625)])
 
 to_label<-c("B1", "Alanine", "Threonine", "trans.Hydroxyproline", "Glutamine", 
-  "Arginine", "Citrulline", "Tyrosine", "Tryptophan", "Ornithine", 
-  "Ethanolamine", "Hydroxy.lysine", "b_Hydroxybutyric_ac", "Butyric_ac", 
-  "Isobutyric_ac", "Homovanillic_ac", "Valeric_ac", "LYSOC14.0", 
-  "LYSOC16.1", "LYSOC16.0", "LYSOC17.0", "LYSOC18.2", "LYSOC18.0", 
-  "LYSOC20.3", "PC36.6_AA", "PC38.6_AA", "PC40.6_AE", "PC40.6_AA", 
-  "C0", "C2", "C4OH", "C9", "C10.2", "C16.1", "B2_corr", "Kynurenine_Trp", 
-  "Putrescine_Orn", "Serotonin_Trp", "Tyr_Phe", "Total_DMA_Arg", 
-  "C2_C0", "urea_cycle")
+            "Arginine", "Citrulline", "Tyrosine", "Tryptophan", "Ornithine", 
+            "Ethanolamine", "Hydroxy.lysine", "b_Hydroxybutyric_ac", "Butyric_ac", 
+            "Isobutyric_ac", "Homovanillic_ac", "Valeric_ac", "LYSOC14.0", 
+            "LYSOC16.1", "LYSOC16.0", "LYSOC17.0", "LYSOC18.2", "LYSOC18.0", 
+            "LYSOC20.3", "PC36.6_AA", "PC38.6_AA", "PC40.6_AE", "PC40.6_AA", 
+            "C0", "C2", "C4OH", "C9", "C10.2", "C16.1", "Barium", "Titanium", 
+            "Manganese", "Arsenic", "Tellurium", "B2_corr", "Kynurenine_Trp", 
+            "Putrescine_Orn", "Serotonin_Trp", "Tyr_Phe", "Total_DMA_Arg", 
+            "C2_C0", "urea_cycle")
 
 to_label<-c("B1", "B2_corr")
+
+to_label<-c("Barium", "Titanium", "Manganese", "Arsenic", "Tellurium")
 
 to_label<-c("Alanine", "Threonine", "trans.Hydroxyproline", "Glutamine", 
             "Arginine", "Citrulline", "Tyrosine", "Tryptophan", "Ornithine", 
@@ -190,15 +203,22 @@ to_label<-c("LYSOC14.0", "LYSOC16.1", "LYSOC16.0", "LYSOC17.0", "LYSOC18.2",
 
 to_label<-c("C0", "C2", "C4OH", "C9", "C10.2", "C16.1","C2_C0")
 
+
+#### checking threshold to use
 logratio2foldchange(0.5, base=2)
 foldchange2logratio(1.5, base=2)
 
+
+log10(range(plot_data$pvalue)[1])
+range(plot_data$log2FC)
+
+### ploting
 head(plot_data)
 volcano_plot<-EnhancedVolcano(plot_data,
                 lab = plot_data$metabolites,
                 x = 'log2FC',
                 y = 'pvalue',
-                xlim = c(-3, 3),
+                xlim = c(-5, 5),
                 ylim = c(0, 6),
                 title = 'SM versus Community',
                 subtitle = '',
@@ -228,23 +248,27 @@ volcano_plot<-EnhancedVolcano(plot_data,
               
 volcano_plot
 
-svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\results_Volcano_plot_ALL_2020-11-13.svg", width = 9, height = 8, bg = "white")
+svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\medianIQR_&_GLMs\\results_Volcano_plot_ALL_2020-11-21.svg", width = 12, height = 8, bg = "white")
 volcano_plot
 dev.off()
 
-svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\results_Volcano_plot_vitamines_2020-11-13.svg", width = 9, height = 8, bg = "white")
+svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\medianIQR_&_GLMs\\results_Volcano_plot_vitamines_2020-11-13.svg", width = 9, height = 8, bg = "white")
 volcano_plot
 dev.off()
 
-svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\results_Volcano_plot_Metabs_2020-11-13.svg", width = 9, height = 8, bg = "white")
+svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\medianIQR_&_GLMs\\results_Volcano_plot_metals_2020-11-21.svg", width = 9, height = 8, bg = "white")
 volcano_plot
 dev.off()
 
-svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\results_Volcano_plot_Lipids_2020-11-13.svg", width = 9, height = 8, bg = "white")
+svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\medianIQR_&_GLMs\\results_Volcano_plot_Metabs_2020-11-13.svg", width = 9, height = 8, bg = "white")
 volcano_plot
 dev.off()
 
-svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\results_Volcano_plot_Carnitines_2020-11-13.svg", width = 9, height = 8, bg = "white")
+svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\medianIQR_&_GLMs\\results_Volcano_plot_Lipids_2020-11-13.svg", width = 9, height = 8, bg = "white")
+volcano_plot
+dev.off()
+
+svg(file = "D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\medianIQR_&_GLMs\\results_Volcano_plot_Carnitines_2020-11-13.svg", width = 9, height = 8, bg = "white")
 volcano_plot
 dev.off()
 

@@ -22,7 +22,7 @@ lapply(list_packages, require, character.only = TRUE)
 
 
 # load full data
-idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-10.csv"), row.names = 1) 
+idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-21.csv"), row.names = 1) 
 
 
 
@@ -56,7 +56,7 @@ tab1 <- tableby(group_adm ~ sex_adm + age_adm + oedema_adm + muac_adm + haz_adm 
 summary(tab1, text=TRUE) 
 
 ### write table
-write2html(tab1, file=paste0("Table1_Participant_Characteristic_",Sys.Date(),".html"))
+write2html(tab1, file=paste0("Table1_Participant_Characteristic_", Sys.Date(),".html"))
 
 
 
@@ -77,7 +77,6 @@ list_met
 summary(idata$group_adm)
 SM<-subset(idata,idata$group_adm =="SM")
 CP<-subset(idata,idata$group_adm =="CP")
-
 
 
 table.data<-SM[list_met]
@@ -137,7 +136,7 @@ table %>% gt()
 
 
 
-write.csv(table, file=paste0("Table2_Median_IQR_Metabolites_",Sys.Date(),".csv"))
+#write.csv(table, file=paste0("Table2_Median_IQR_Metabolites_",Sys.Date(),".csv"))
 
 
 
@@ -152,7 +151,7 @@ write.csv(table, file=paste0("Table2_Median_IQR_Metabolites_",Sys.Date(),".csv")
 
 # load full data
 #idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_BoxCox_2020-11-08.csv"), row.names = 1) 
-idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-10.csv"), row.names = 1) 
+idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-21.csv"), row.names = 1) 
 colnames(idata)
 
 
@@ -181,12 +180,14 @@ labels(idata)  <- c(site = 'Site', group_adm = "Group")
 #################################################
 ###GLMs for all metabolites --- create a function
 
+#### exclude lead (giving issues, to many zeros)
 
-###M1
-GLM.run<-function(y) {
-  form <- as.formula(paste0(y,"~ group_adm"))
-  fit<-(glm(form, data=idata, na.action = na.exclude))
-}
+
+### M1
+# GLM.run<-function(y) {
+#   form <- as.formula(paste0(y,"~ group_adm"))
+#   fit<-(glm(form, data=idata, na.action = na.exclude))
+# }
 
 GLM.run<-function(y) {
   form <- as.formula(paste0("group_adm~", y))
@@ -197,10 +198,10 @@ GLM.run<-function(y) {
 
 
 #### M2
-GLM.run<-function(y) {
-  form <- as.formula(paste0(y,"~ group_adm + sex_adm + age_adm"))
-  fit<-(glm(form, data=idata, na.action = na.exclude))
-}
+# GLM.run<-function(y) {
+#   form <- as.formula(paste0(y,"~ group_adm + sex_adm + age_adm"))
+#   fit<-(glm(form, data=idata, na.action = na.exclude))
+# }
 
 GLM.run<-function(y) {
   form <- as.formula(paste0("group_adm~", y," + sex_adm + age_adm"))
@@ -209,15 +210,15 @@ GLM.run<-function(y) {
 
 
 
-
 #### M3
-GLM.run<-function(y) {
-  form <- as.formula(paste0(y,"~ group_adm + sex_adm + age_adm + site"))
-  fit<-(glm(form, data=idata, na.action = na.exclude))
-}
+# GLM.run<-function(y) {
+#   form <- as.formula(paste0(y,"~ group_adm + sex_adm + age_adm + site"))
+#   fit<-(glm(form, data=idata, na.action = na.exclude))
+# }
+
 
 GLM.run<-function(y) {
-  form <- as.formula(paste0("group_adm~",y,"+ sex_adm + age_adm + site"))
+  form <- as.formula(paste0("group_adm~", y," + sex_adm + age_adm + site"))
   fit<-(glm(form, data=idata, family=binomial, na.action = na.exclude))
 }
 
@@ -231,18 +232,23 @@ GLM.run<-function(y) {
 
 
 
+
+
+####################################################################
+colnames(idata)
 ### apply the function to all metabolites
 GLMs.out <- lapply(colnames(idata)[c(17:ncol(idata))],GLM.run )
+
 
 #### print out results
 results<-lapply(GLMs.out, function(x){summary(x)})
 results
 
 
-
 #Pull coefficients from models
 estim.coef.results<-sapply(results, function(x){coef(x)})
 estim.coef.results
+
 
 ## transpose the table
 estim.coef.results<-t(estim.coef.results)
@@ -267,55 +273,62 @@ head(estim.coef.results)
 
 
 
-ALL_estim.coef.results<-estim.coef.results
+#ALL_estim.coef.results<-estim.coef.results
 ALL_estim.coef.results<-data.frame(cbind(ALL_estim.coef.results,  estim.coef.results))
+
+
 
 
 ALL_estim.coef.results<-data.frame(ALL_estim.coef.results)
 
 
 colnames(ALL_estim.coef.results)
+row.names(ALL_estim.coef.results)
 ### add in FDR corrected p-values
 head(ALL_estim.coef.results)
-p.vals<-c(ALL_estim.coef.results$p.group_admSM)
-p.vals<-c(ALL_estim.coef.results$p.group_admSM.1)
-p.vals<-c(ALL_estim.coef.results$p.group_admSM.2)
+# p.vals<-c(ALL_estim.coef.results$p.group_admSM)
+# p.vals<-c(ALL_estim.coef.results$p.group_admSM.1)
+# p.vals<-c(ALL_estim.coef.results$p.group_admSM.2)
+
 
 
 colnames(ALL_estim.coef.results)
-p.vals<-ALL_estim.coef.results[, 8]
-p.vals<-ALL_estim.coef.results[, 29]
-p.vals<-ALL_estim.coef.results[, 53]
-
-# apply correction -- > some correction option methods: "bonferroni", "fdr"
-final<-p.adjust(p.vals, method="fdr")
-final<-signif(final, digits=3)
-final
-
-#dput(final)
-
-
 #### add in FDR p-values
-head(estim.coef.results)
-str(estim.coef.results)
-
-ALL_estim.coef.results$FDR_p.group_admSM_M1<-final
-ALL_estim.coef.results$FDR_p.group_admSM_M2<-final
-ALL_estim.coef.results$FDR_p.group_admSM_M3<-final
-
+# apply correction -- > some correction option methods: "bonferroni", "fdr"
+ALL_estim.coef.results$FDR_p.group_admSM_M1<-p.adjust(ALL_estim.coef.results$p.albumin_adm, method="fdr")
+ALL_estim.coef.results$FDR_p.group_admSM_M2<-p.adjust(ALL_estim.coef.results$p.albumin_adm.1, method="fdr")
+ALL_estim.coef.results$FDR_p.group_admSM_M3<-p.adjust(ALL_estim.coef.results$p.albumin_adm.2, method="fdr")
+ALL_estim.coef.results$FDR_p.group_admSM_M4<-p.adjust(ALL_estim.coef.results$p.albumin_adm.3, method="fdr")
+#dput(final)
 
 head(ALL_estim.coef.results)
 ###
 
 
+
+
+###### prep for saving
 ALL_estim.coef.results<-apply(ALL_estim.coef.results,2, signif, digits=3)
 head(ALL_estim.coef.results)
 
-write.csv(ALL_estim.coef.results,file=paste0("BoxCoxTransform_coefficients_all_M1M2&M3_Gamma_3digits_",Sys.Date(), ".csv"))
-write.csv(ALL_estim.coef.results,file=paste0("Coefficients_all_M1M2&M3_binomial_3digits_",Sys.Date(), ".csv"))
+#write.csv(ALL_estim.coef.results,file=paste0("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\BoxCoxTransform_coefficients_all_M1M2&M3_Gamma_3digits_",Sys.Date(), ".csv"))
+write.csv(ALL_estim.coef.results,file=paste0("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\Coefficients_all_M1M2&M3M4_binomial_3digits_",Sys.Date(), ".csv"))
 
-write.csv(ALL_estim.coef.results,file=paste0("Coefficients_all_M4_binomial_3digits_",Sys.Date(), ".csv"))
-write.csv(ALL_estim.coef.results,file=paste0("Coefficients_all_M3_binomial_3digits_",Sys.Date(), ".csv"))
+
+
+################################################
+### collecting median IQR and GLM data
+colnames(table)
+head(table)
+
+colnames(ALL_estim.coef.results)
+table_2<-merge(table, ALL_estim.coef.results[,c("est.albumin_adm.3","se.albumin_adm.3","p.albumin_adm.3","FDR_p.group_admSM_M3")], by="row.names",sort = FALSE)
+head(table_2)
+colnames(table_2)<-c("Row.names", "Micronutrient / Metabolite", "SM", "CP", "b", 
+                     "SE", "p", "q")
+
+
+write.csv(table_2[,-1],file=paste0("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\MedianIQR_GLM_results_all_M3_binomial_3digits_",Sys.Date(), ".csv"))
 
 #################################################
 #################################################

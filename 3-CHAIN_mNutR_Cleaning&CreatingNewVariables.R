@@ -18,7 +18,7 @@ lapply(list_packages, require, character.only = TRUE)
 
 
 # load full data
-idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_idata_2020-11-10.csv"), row.names = 1) # ND (not done) equivalent to NA
+idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_idata_2020-11-20.csv"), row.names = 1) 
 
 
 ### list factors to convert
@@ -47,7 +47,7 @@ idata <- idata %>% mutate(site = derivedFactor(
 
 summary(idata$site)
 idata$site<-droplevels(idata$site)
-
+summary(idata$site)
 
 
 ###############################
@@ -96,9 +96,9 @@ summary(idata$sex_adm)
 
 
 #### replace LOD by 0.0104/2  half lowest detection range
-idata$Carnosine<-gsub("< LOD", 0.0052, idata$Carnosine)
+idata$Carnosine<-gsub("< LOD", min(as.numeric(idata$Carnosine), na.rm=T)/10 , idata$Carnosine)
 idata$Carnosine<-as.numeric(idata$Carnosine)
-
+idata$Carnosine
 
 
 #### correcting units for albumin
@@ -109,10 +109,10 @@ idata[which(idata$albumin_adm < 10),]
 #write.csv(Blantyre, file="CHAIN_admBlood_albumin_unit_check.csv")
 
 
-
 ###### replace after changing units
 idata[which(idata$albumin_adm < 10),]$albumin_adm <- idata[which(idata$albumin_adm < 10),]$albumin_adm * 10
 idata[which(idata$albumin_adm < 10),]$albumin_adm
+
 
 #### correction B2
 idata$B2_corr<-signif(idata$B2/idata$albumin_adm, 4)
@@ -129,7 +129,6 @@ head(idata)[1:20]
 
 
 ######################### calculating other summary ratios
-
 
 ###create AAA aromatic amino acids with aromatic ring
 ### tyrosine,tryptophane, phenylalanine, histidine, + 5-hydroxytryptophan, thyroxine, L-DOPA
@@ -272,6 +271,54 @@ hist(idata$Aspartic_ac)
 
 
 
+#################################
+##### Removing variables that have too few variables
+colnames(idata)
+
+na.counts<-c()
+for (i in 17:ncol(idata)){
+  na.counts[i-16]<- length(which(is.na(idata[,i]) | idata[i] == "ND" )) / length(idata[,i]) *100
+}
+na.counts
+
+na.counts<-data.frame(cbind(colnames(idata)[17:ncol(idata)], na.counts))
+na.counts
+to_Xclude<-na.counts[which(na.counts$na.counts > 70),]$V1
+to_Xclude
+
+idata[, colnames(idata) %in% to_Xclude]
+idata<-idata[, !colnames(idata) %in% to_Xclude]
+
+
+
+
+#################################
+##### Replacing ND by 1/2 LOD
+colnames(idata)
+
+nd.counts<-c()
+for (i in 17:ncol(idata)){
+  nd.counts[i-16]<- length(which(idata[i] == "ND" )) / length(idata[,i]) *100
+}
+nd.counts
+
+
+nd.counts<-data.frame(cbind(colnames(idata)[17:ncol(idata)], nd.counts))
+nd.counts
+to_replace<-nd.counts[which(nd.counts$nd.counts > 0),]$V1
+to_replace
+
+
+for(i in 1:length(to_replace)){
+  idata[ , to_replace[i]]<- ifelse(idata[ , to_replace[i]] =="ND", min(as.numeric(idata[,to_replace[i]]), na.rm=T)/10 ,idata[,to_replace[i]])
+}
+
+idata[, colnames(idata) %in% to_replace]
+
+
+
+
+#################################
 choose.dir()
 write.csv(idata, file=paste0("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\5-Data\\CHAIN_mNutR_fulldata_", Sys.Date(),".csv"))
 

@@ -27,7 +27,7 @@ theme_set(theme_minimal())
 
 
 # load full data
-idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-10.csv"), row.names = 1) 
+idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_fulldata_X_2020-11-21.csv"), row.names = 1) 
 
 
 
@@ -54,7 +54,7 @@ color.set<-c(c('grey80', 'springgreen2','grey60', 'grey40'))
 barplot(1:4, col = color.set)
 
 
-treshold_data<-read.csv("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\GLMs\\Coefficients_all_M1M2&M3_binomial_3digits_2020-11-13.csv")
+treshold_data<-read.csv("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\7-Analysis-Results\\medianIQR_&_GLMs\\GLM_results_Coefficient_tables\\Coefficients_all_M1M2&M3M4_binomial_3digits_2020-11-21.csv")
 colnames(treshold_data)
 treshold_data<-treshold_data[,c("X","FDR_p.group_admSM_M3")]
 colnames(treshold_data) <- c("metabolites", "pvalue")
