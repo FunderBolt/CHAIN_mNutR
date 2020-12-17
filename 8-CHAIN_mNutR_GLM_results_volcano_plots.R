@@ -10,7 +10,7 @@ BiocManager::install('EnhancedVolcano')
 
 
 # make list of needed packages
-list_packages <- c("here","mgsub","tidyverse","EnhancedVolcano","gtools","ggthemes")
+list_packages <- c("here","mgsub","tidyverse","EnhancedVolcano","gtools","ggthem hjm jhmmjgdcscscds  m VV B/bnbvb nnes")
 
 
 
