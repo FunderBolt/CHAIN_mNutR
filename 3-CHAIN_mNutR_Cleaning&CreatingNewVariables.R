@@ -1,9 +1,11 @@
+# ====  CHAIN_NutR | Cleaning and Creating new variables ===============================
 
-#############################
-###  CHAIN_NutR
-###  Cleaning and Creating new variables
-#############################
+### author: CBD
+### date: format(Sys.Date(), "%B %d, %Y")
 
+
+
+# 0. Packages ============================================================
 # make list of needed packages
 list_packages <- c("here","mgsub","tidyverse","mosaic","arsenal")
 
@@ -17,12 +19,19 @@ lapply(list_packages, require, character.only = TRUE)
 
 
 
+
+# 1. Load data ============================================================
+
 # load full data
-idata <- read.csv(paste0(dirname(dirname(dirname(here("6-Data")))), "/5-Data","/CHAIN_mNutR_idata_2020-11-20.csv"), row.names = 1) 
+idata <- read.csv(paste0(dirname(dirname(here())), "/5-Data","/CHAIN_mNutR_idata_2020-11-20.csv"), row.names = 1) 
 
 
+
+# 2. Set Factor ============================================================
 ### list factors to convert
+
 str(idata)
+dput(colnames(idata))
 factor_list<-c("record_id", "sex_adm","parttype_adm","site","africa","group_adm","age_group_adm",
                "urban","oedema_adm","adm_dead","dead")
 
@@ -30,8 +39,10 @@ idata[, factor_list] <- lapply(idata[, factor_list], as.factor)
 str(idata)
 
 
+# 3. Make human readible ============================================================
 
-### make site human readible
+# * 1. Site ============================================================
+
 idata <- idata %>% mutate(site = derivedFactor(
   "Banfora" = site=="60001",
   "Blantyre" = site=="30001",
@@ -50,8 +61,8 @@ idata$site<-droplevels(idata$site)
 summary(idata$site)
 
 
-###############################
-### make groups human readible
+# * 2. Group ============================================================
+
 idata <- idata %>% mutate(group_adm = derivedFactor(
   "SM" = group_adm=="1",
   "MAM" = group_adm=="2",
@@ -65,25 +76,8 @@ idata$group_adm<-droplevels(idata$group_adm)
 
 
 
-###### check summary
-mycontrols  <- tableby.control(test=FALSE, total=TRUE, digits.pct = 0
-                               #numeric.test="kwt", cat.test="chisq",
-                               #numeric.stats=c("N", "median", "q1q3"),
-                               #cat.stats=c("countpct"),
-                               #stats.labels=list(N='Count', median='Median', q1q3='Q1,Q3')
-                               )
 
-labels(idata)  <- c(site = 'Site', group_adm = "Group")
-tab1 <- tableby(site ~ group_adm, data=idata, control=mycontrols)
-summary(tab1, text=TRUE) 
-
-### write table
-write2html(tab1, file=paste0("Summary_Tally_SamplesPerSite_",Sys.Date(),".html"))
-
-
-
-
-
+# * 3. Sex ============================================================
 ### make sex human readible
 idata <- idata %>% mutate(sex_adm = derivedFactor(
   "Male" = sex_adm=="1",
@@ -95,24 +89,55 @@ summary(idata$sex_adm)
 
 
 
-#### replace LOD by 0.0104/2  half lowest detection range
-idata$Carnosine<-gsub("< LOD", min(as.numeric(idata$Carnosine), na.rm=T)/10 , idata$Carnosine)
-idata$Carnosine<-as.numeric(idata$Carnosine)
-idata$Carnosine
+# * 4. Check summary: for human readible ============================================================
 
+
+### set labels for table column names for output
+labels(idata)  <- c(site = 'Site', group_adm = "Enrolment group", sex_adm="Sex")
+
+
+mycontrols  <- tableby.control(test=FALSE, total=TRUE, digits.pct = 0
+                               #numeric.test="kwt", cat.test="chisq",
+                               #numeric.stats=c("N", "median", "q1q3"),
+                               #cat.stats=c("countpct"),
+                               #stats.labels=list(N='Count', median='Median', q1q3='Q1,Q3')
+)
+
+
+
+tab1 <- tableby(group_adm ~ site + sex_adm , data=idata, control=mycontrols)
+summary(tab1, text=TRUE) 
+
+
+### write table
+write2html(tab1, file=paste0("Summary_Tally_SamplesPerSite_",Sys.Date(),".html"))
+
+
+
+
+
+# 4. Calculate albumin correction ratios  ============================================================
+
+# * 1. check for albumin outliers ============================================================
 
 #### correcting units for albumin
 hist(idata$albumin_adm)
 idata[which(idata$albumin_adm < 10),]
 
 #Blantyre<-idata[idata$site =="Blantyre", ]
+
+### write list of albumin outlier cases
 #write.csv(Blantyre, file="CHAIN_admBlood_albumin_unit_check.csv")
 
+
+# * 2. change albumin units ============================================================
 
 ###### replace after changing units
 idata[which(idata$albumin_adm < 10),]$albumin_adm <- idata[which(idata$albumin_adm < 10),]$albumin_adm * 10
 idata[which(idata$albumin_adm < 10),]$albumin_adm
 
+
+# * 3. calculate albumine correciton ratio ============================================================
 
 #### correction B2
 idata$B2_corr<-signif(idata$B2/idata$albumin_adm, 4)
@@ -128,7 +153,8 @@ head(idata)[1:20]
 
 
 
-######################### calculating other summary ratios
+# 5. Calculate other ratios and summary variables ============================================================
+
 
 ###create AAA aromatic amino acids with aromatic ring
 ### tyrosine,tryptophane, phenylalanine, histidine, + 5-hydroxytryptophan, thyroxine, L-DOPA
@@ -176,6 +202,7 @@ idata$Glucogenic_AA<-idata$Alanine + idata$Arginine + idata$Asparagine + idata$A
   idata$Methionine + idata$Proline + idata$Serine + idata$Valine 
 hist(idata$Glucogenic_AA)
 
+
 ### ketogenic 
 ## leucine lysine
 colnames(idata)
@@ -218,6 +245,7 @@ idata$Spermine_Spermidine<- idata$Spermine/idata$Spermidine
 hist(idata$Spermine_Spermidine)
 hist(idata$Spermine)
 hist(idata$Spermidine)
+
 
 ### Tyr_Phe
 colnames(idata)
@@ -271,20 +299,29 @@ hist(idata$Aspartic_ac)
 
 
 
-#################################
-##### Removing variables that have too few variables
+
+# 6. Removing variables that have too few values ============================================================
+
 colnames(idata)
 
+
+# * 1. Function to count NAs across columns
 na.counts<-c()
 for (i in 17:ncol(idata)){
   na.counts[i-16]<- length(which(is.na(idata[,i]) | idata[i] == "ND" )) / length(idata[,i]) *100
 }
 na.counts
 
+# * 2. Organise dataframe and identify those with more than 70% missing
+
+### [Note] This criteria is usually applied to each group of interest seperatly
+
 na.counts<-data.frame(cbind(colnames(idata)[17:ncol(idata)], na.counts))
 na.counts
 to_Xclude<-na.counts[which(na.counts$na.counts > 70),]$V1
 to_Xclude
+
+# * 3. Create new dataframe excluding variables with more than 70% missing
 
 idata[, colnames(idata) %in% to_Xclude]
 idata<-idata[, !colnames(idata) %in% to_Xclude]
@@ -292,10 +329,20 @@ idata<-idata[, !colnames(idata) %in% to_Xclude]
 
 
 
-#################################
-##### Replacing ND by 1/2 LOD
+
+# 7. Replace lower than LOD  ============================================================
+
+# * 1. Example case | Replace lower than LOD  ============================================================
+
+#### replace Limit of detection (LOD) by half lowest detection range
+idata$Carnosine<-gsub("< LOD", min(as.numeric(idata$Carnosine), na.rm=T)/10 , idata$Carnosine)
+idata$Carnosine<-as.numeric(idata$Carnosine)
+idata$Carnosine
+
+
 colnames(idata)
 
+# * 2. Function | Identify those that are ND (not detected) or lower than LOD =========================================
 nd.counts<-c()
 for (i in 17:ncol(idata)){
   nd.counts[i-16]<- length(which(idata[i] == "ND" )) / length(idata[,i]) *100
@@ -303,11 +350,14 @@ for (i in 17:ncol(idata)){
 nd.counts
 
 
+# * 3. Apply Function | Identify those that are ND (not detected) or lower than LOD =========================================
 nd.counts<-data.frame(cbind(colnames(idata)[17:ncol(idata)], nd.counts))
 nd.counts
 to_replace<-nd.counts[which(nd.counts$nd.counts > 0),]$V1
 to_replace
 
+
+# * 4. Function | Replace by minimim/10 those that are ND (not detected) or lower than LOD =========================================
 
 for(i in 1:length(to_replace)){
   idata[ , to_replace[i]]<- ifelse(idata[ , to_replace[i]] =="ND", min(as.numeric(idata[,to_replace[i]]), na.rm=T)/10 ,idata[,to_replace[i]])
@@ -318,9 +368,9 @@ idata[, colnames(idata) %in% to_replace]
 
 
 
-#################################
-choose.dir()
-write.csv(idata, file=paste0("D:\\Dropbox\\Bandsma.Lab\\1.Projects\\1.CHAIN_NETWORK\\2019_CHAIN_Micronutrient\\5-Data\\CHAIN_mNutR_fulldata_", Sys.Date(),".csv"))
+# 8. Save new dataset =========================================
 
+#choose.dir()
+write.csv(idata, file=paste0(dirname(dirname(here())), "/5-Data/CHAIN_mNutR_idata_", Sys.Date(),".csv")) 
 
 
